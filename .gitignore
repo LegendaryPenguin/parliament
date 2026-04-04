@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dashboard/dist/
+*.tsbuildinfo
+.parliament/
+parliament-tools/
+bench/.tmp/
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
