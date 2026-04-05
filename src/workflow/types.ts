@@ -44,7 +44,8 @@ export interface StepRef {
  * there is one function rather than a pretty one and a correct one that can drift.
  */
 export function stepRefKey(ref: StepRef): string {
-  return `${ref.workflowId}/${ref.step}/${ref.attempt}`;
+  const esc = (s: string) => s.replace(/%/g, '%25').replace(/\//g, '%2F');
+  return `${esc(ref.workflowId)}/${esc(ref.step)}/${ref.attempt}`;
 }
 
 /**
