@@ -268,10 +268,21 @@ export type Event =
   | ApprovalGranted
   | ApprovalDenied;
 
-/** An event as submitted, before the store assigns its sequence. */
-export type NewEvent = Omit<Event, 'sequence' | 'version'> & {
-  readonly version?: typeof EVENT_VERSION;
-};
+/**
+ * An event as submitted, before the store assigns its sequence.
+ *
+ * The conditional type is load-bearing, not stylistic. A bare
+ * `Omit<Event, 'sequence' | 'version'>` does **not** distribute over a union: it
+ * collapses to the members common to every variant — the envelope — and silently
+ * drops `step`, `attempt`, `workerId`, `output` and every other payload field. The
+ * result still compiles, so the breakage shows up as an excess-property error at
+ * every producer, which then "fixes" it with a cast, and the type stops checking
+ * anything at all. `T extends Event ? ... : never` forces the distribution so each
+ * variant keeps its own fields.
+ */
+export type NewEvent<T extends Event = Event> = T extends Event
+  ? Omit<T, 'sequence' | 'version'> & { readonly version?: typeof EVENT_VERSION }
+  : never;
 
 /**
  * Thrown when an append would violate the expected sequence.
