@@ -182,9 +182,18 @@ export class LeaseManager {
     const expiresAt = now + durationMs;
     const expected = headOf(events);
     try {
+      // A renewal is `step.lease_extended`, not a second `step.leased`.
+      //
+      // Emitting `step.leased` here was a live bug: the projection deduplicates on
+      // (type, step, attempt, worker), so every renewal after the first was absorbed
+      // as a duplicate and `StepProjection.leaseExpiresAt` kept the *original*
+      // expiry. `readySteps` would then offer a step this worker is actively
+      // heartbeating on. The scheduler itself was unaffected because it checks
+      // `liveLeaseOf` over raw events, but anything reading the projection — the
+      // dashboard, the trace view, any second scheduler — saw a live lease as lapsed.
       const [written] = await this.store.append(lease.workflowId, expected, [
         {
-          type: 'step.leased',
+          type: 'step.lease_extended',
           workflowId: lease.workflowId,
           at: now,
           step: lease.step,

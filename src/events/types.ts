@@ -40,6 +40,7 @@ export type EventType =
   | 'workflow.cancelled'
   | 'step.scheduled'
   | 'step.leased'
+  | 'step.lease_extended'
   | 'step.started'
   | 'step.completed'
   | 'step.failed'
@@ -115,6 +116,25 @@ export interface StepScheduled extends EventEnvelope {
 
 export interface StepLeased extends EventEnvelope {
   readonly type: 'step.leased';
+  readonly step: StepName;
+  readonly attempt: number;
+  readonly workerId: string;
+  readonly leaseExpiresAt: number;
+}
+
+/**
+ * A heartbeat extended a live lease.
+ *
+ * Its own event type rather than a repeated `step.leased`, and the reason is a bug
+ * this fixed. Renewal-as-a-second-lease is folded as a *duplicate* by the
+ * deduplication rule (same type, step, attempt and worker), so the projection kept
+ * the **original** expiry and reported a lease that had long since been renewed as
+ * about to lapse. `readySteps` would then offer a step that is genuinely held, and
+ * anything trusting the projection's lease fields would reassign live work. A
+ * renewal is a distinct fact and needs a distinct event.
+ */
+export interface StepLeaseExtended extends EventEnvelope {
+  readonly type: 'step.lease_extended';
   readonly step: StepName;
   readonly attempt: number;
   readonly workerId: string;
@@ -256,6 +276,7 @@ export type Event =
   | WorkflowCancelled
   | StepScheduled
   | StepLeased
+  | StepLeaseExtended
   | StepStarted
   | StepCompleted
   | StepFailed

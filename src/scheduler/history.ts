@@ -72,6 +72,20 @@ export function currentLeaseOf(
           sequence: e.sequence,
         };
         break;
+      case 'step.lease_extended':
+        // A renewal moves the expiry and nothing else — it is not a new lease, so it
+        // must not change the holder, the attempt, or the sequence the original claim
+        // was made at.
+        //
+        // Guarded on holder identity: a heartbeat from a worker that no longer holds
+        // this step must not extend the current holder's claim. That can genuinely
+        // happen — a worker whose lease lapsed and was reassigned may still have a
+        // heartbeat in flight — and without the guard it would silently hand the old
+        // worker's renewal to the new one.
+        if (lease && lease.workerId === e.workerId && lease.attempt === e.attempt) {
+          lease = { ...lease, expiresAt: e.leaseExpiresAt };
+        }
+        break;
       case 'step.completed':
       case 'step.failed':
       case 'step.lease_expired':
