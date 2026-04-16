@@ -28,6 +28,14 @@ export interface BoundProjection {
 
 export function bindProjection(definitions: DefinitionStore): BoundProjection {
   const definitionFor = (events: readonly Event[]): WorkflowDef => {
+    // Best evidence first. The definition recorded in `workflow.created` is the one this
+    // history was actually produced against, which is the only source that stays correct
+    // after a restart or when the definition has since been edited — the store holds the
+    // *current* definition, and folding an old history against a newer graph is how a
+    // replay silently stops matching what happened.
+    const logged = events.find((e) => e.type === 'workflow.created')?.definition;
+    if (logged !== undefined) return logged;
+
     const first = events[0];
     const stored = first !== undefined ? definitions.get(first.workflowId) : undefined;
     return stored ?? synthesizeDefinition(events);

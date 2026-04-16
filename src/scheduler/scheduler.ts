@@ -252,6 +252,7 @@ export class Scheduler {
         at: now,
         workflow: def.name,
         definitionVersion: def.version,
+        definition: def,
         input: opts.input ?? null,
         ...(deadlineAt !== undefined ? { deadlineAt } : {}),
         ...(opts.tenant !== undefined ? { tenant: opts.tenant } : {}),

@@ -87,6 +87,24 @@ export interface WorkflowCreated extends EventEnvelope {
    * log to explain it.
    */
   readonly priority?: number;
+
+  /**
+   * The definition this workflow runs, recorded in the log at creation.
+   *
+   * This closes a hole in the premise of the whole design. The fold needs the definition
+   * — whether a `step.failed` becomes `failed` or `retrying` depends on the retry policy
+   * — so if the definition lives only in process memory, then "the log is the state" is
+   * false: a restart replays the events and reconstructs a *different* workflow.
+   * `synthesizeDefinition` makes that degradation survivable by inferring a chain, but a
+   * parallel graph comes back as a line and the retry policy is back-fitted to whatever
+   * happened to occur. The history was intact; the thing needed to interpret it was not.
+   *
+   * Optional rather than required, because the log is a compatibility surface forever and
+   * histories written before this field exists must still read. A reader therefore falls
+   * back to the definition store and then to synthesis — in that order, best evidence
+   * first.
+   */
+  readonly definition?: WorkflowDef;
 }
 
 export interface WorkflowCompleted extends EventEnvelope {

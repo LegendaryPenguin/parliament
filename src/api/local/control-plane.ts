@@ -46,6 +46,7 @@ export class LocalControlPlane implements ControlPlanePort {
         at,
         workflow: request.definition.name,
         definitionVersion: request.definition.version,
+        definition: request.definition,
         input: request.input,
         ...(request.deadlineAt !== undefined ? { deadlineAt: request.deadlineAt } : {}),
         ...(request.tenant !== undefined ? { tenant: request.tenant } : {}),
