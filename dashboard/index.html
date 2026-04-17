@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Parliament — workflow observability</title>
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <a class="skip" href="#detail">Skip to the selected workflow</a>
+
+    <header class="topbar">
+      <h1>Parliament</h1>
+      <p class="tagline">Durable orchestration control plane — execution observability</p>
+      <span id="connection" class="connection">idle</span>
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+    </header>
+
+    <main class="layout">
+      <section class="panel panel-list" aria-labelledby="list-heading">
+        <div class="panel-head">
+          <h2 id="list-heading">Executions</h2>
+          <span id="list-meta" class="panel-meta"></span>
+        </div>
+
+        <div class="filters">
+          <label class="filter">
+            <span>State</span>
+            <select id="filter-state">
+              <option value="">any</option>
+              <option value="pending">pending</option>
+              <option value="ready">ready</option>
+              <option value="running">running</option>
+              <option value="waiting">waiting</option>
+              <option value="retrying">retrying</option>
+              <option value="succeeded">succeeded</option>
+              <option value="failed">failed</option>
+              <option value="cancelled">cancelled</option>
+            </select>
+          </label>
+          <label class="filter">
+            <span>Tenant</span>
+            <input id="filter-tenant" type="text" placeholder="press / to focus" autocomplete="off" />
+          </label>
+          <button id="refresh" class="btn btn-quiet" type="button">Refresh</button>
+        </div>
+
+        <ul id="workflow-list" class="workflows"></ul>
+      </section>
+
+      <section id="detail" class="panel panel-detail" tabindex="-1" aria-live="polite"></section>
+    </main>
+
+    <script type="module" src="./dist/app.js"></script>
+    <noscript>
+      <p class="noscript">
+        This view renders the event log in the browser and needs JavaScript. The same data is
+        available over HTTP: <code>GET /workflows</code>, <code>GET /workflows/:id/trace</code>.
+      </p>
+    </noscript>
+  </body>
+</html>

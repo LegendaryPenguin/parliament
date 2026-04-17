@@ -1,0 +1,26 @@
+{
+  "//": "A second project because the browser build needs the DOM lib and must NOT have @types/node: a dashboard that can reach for `process` or `Buffer` would typecheck and then fail at runtime. Same strictness as the root project. Build with `npx tsc -p dashboard/tsconfig.json`.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "outDir": "dist",
+    "rootDir": "src",
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "declaration": false,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["src/**/*.ts"]
+}
