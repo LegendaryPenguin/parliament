@@ -368,6 +368,25 @@ export interface EventStore {
 
   /** Workflows not in a terminal state, so recovery can skip finished work. */
   listActive(): Promise<readonly WorkflowId[]>;
+
+  /**
+   * Observes every successful append. Returns a function that stops observing.
+   *
+   * On the contract rather than in a decorator, and that placement is the point. A
+   * live view of a workflow — a dashboard, a stream, a metrics tap — needs to know
+   * when the log grows. If that notification comes from a wrapper, then anything
+   * constructed with the *unwrapped* store silently stops feeding it: the scheduler
+   * keeps working, the log keeps growing, every open view quietly goes stale, and
+   * nothing errors. The failure is invisible precisely because the component that
+   * would notice is the one not being told.
+   *
+   * Putting it here makes that unwireable. An implementation that forgets to notify
+   * fails its own conformance tests instead of failing a dashboard at 3am.
+   *
+   * Observers must not throw and must not block; an append is on the hot path and the
+   * store will not wait for a listener.
+   */
+  subscribe(listener: (events: readonly Event[]) => void): () => void;
 }
 
 /** A step's position, as folded from the history. */
