@@ -299,19 +299,53 @@ export class FileEventStore implements EventStore {
   }
 
   /**
-   * Persists the index.
+   * Persists the index, serialized against every other index write.
    *
-   * Written to a temp file and renamed, so a crash mid-write leaves the previous index
-   * intact rather than a half-parsed one. Cheap insurance even though a garbage index is
-   * recoverable by rebuilding from the logs.
+   * The serialization is a bug fix, not tidiness. `withLock` serializes appends per
+   * *workflow*, and the index is the one piece of state shared by all of them, so two
+   * appends to two different workflows ran this concurrently: both wrote the same
+   * `index.json.tmp`, interleaving their bytes, and then both renamed it — the second
+   * rename failing with ENOENT because the first had already moved the file away. That
+   * rejection surfaced out of `append`, *after* the event's own fsync, so the caller was
+   * told its append had failed for an event that was already durable. A lease acquired
+   * that way is recorded in the log and believed lost by the worker holding it, which is
+   * the one thing the whole leasing mechanism exists to prevent.
+   *
+   * Two changes close it. The temp file is named per write, so no two writers can ever be
+   * holding the same one. And writes are chained, with at most one queued behind the one in
+   * flight: a third concurrent append needs no write of its own, because the queued write
+   * serializes `this.index` when it *runs* and by then contains that append's entry too.
+   * Without the coalescing, a burst of N appends would cost N whole-index fsyncs to reach
+   * one final state.
+   *
+   * A failure here still rejects the append, even though the event is durable by then. That
+   * is deliberate: with the race fixed, the remaining ways this can fail are a full or
+   * broken filesystem, and a store that swallowed those would report success while silently
+   * ceasing to persist the index — recoverable, but only by a rebuild nobody knew to run.
    */
-  private async writeIndex(): Promise<void> {
+  private writeIndex(): Promise<void> {
+    if (this.indexQueued) return this.indexChain;
+    this.indexQueued = true;
+    const flush = (): Promise<void> => {
+      this.indexQueued = false;
+      return this.flushIndex();
+    };
+    // Chained off the settled outcome, so one failed index write does not wedge the queue.
+    const next = this.indexChain.then(flush, flush);
+    this.indexChain = next.catch(() => undefined);
+    return next;
+  }
+
+  private async flushIndex(): Promise<void> {
     const workflows: Record<string, IndexEntry> = {};
     for (const [id, entry] of this.index) workflows[id] = entry;
     const body: IndexFile = { version: INDEX_VERSION, workflows };
 
+    // Written to a temp file and renamed so a crash mid-write leaves the previous
+    // index intact rather than a half-parsed one. Cheap insurance even though a
+    // garbage index is recoverable by rebuilding.
     const target = path.join(this.root, INDEX_FILE);
-    const tmp = `${target}.tmp`;
+    const tmp = `${target}.${process.pid}.${++this.indexWrites}.tmp`;
     const handle = await open(tmp, 'w');
     try {
       await handle.write(`${JSON.stringify(body, null, 2)}\n`, null, 'utf8');
