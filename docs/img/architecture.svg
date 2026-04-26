@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 712" width="980" height="712"
+     font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img"
+     aria-labelledby="title desc">
+  <title id="title">parliament control plane architecture</title>
+  <desc id="desc">The event log sits at the centre. The HTTP API, dashboard and replay CLI read
+    and append to it on the left; the scheduler folds it and appends leases above; worker
+    processes lease steps through the scheduler on the right and reach side effects only through
+    the tool executor; a Python worker pool speaks the same four operations over a socket.</desc>
+
+  <!--
+    Drawn by hand, and every colour choice here is about being readable on a light page and on a
+    dark one. There is no background rect: a diagram that paints itself white is unreadable in a
+    dark-themed viewer, and one that paints itself dark is unreadable in a light one. So every
+    piece of text sits on a filled card dark enough for light text, including the labels on the
+    arrows, which get their own small pills for exactly that reason. The only text floating free
+    is the title, at a size where a 3:1 contrast ratio is sufficient either way.
+
+    No gradients, no filters, no transparency tricks. Flat fills and single-weight strokes.
+  -->
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b97a6"/>
+    </marker>
+  </defs>
+
+  <style>
+    .card { fill: #26303d; stroke: #5b6b7f; stroke-width: 1.5; }
+    .core { fill: #1e3350; stroke: #7aa2d6; stroke-width: 2; }
+    .h    { fill: #f1f5f9; font-size: 15px; font-weight: bold; }
+    .hc   { fill: #d7e6fa; font-size: 17px; font-weight: bold; letter-spacing: 0.08em; }
+    .b    { fill: #aeb9c6; font-size: 12.5px; }
+    .bc   { fill: #c8daf2; font-size: 12.5px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .edge { stroke: #8b97a6; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+    .both { marker-start: url(#arrow); }
+    .read { stroke-dasharray: 6 4; }
+    .pill { fill: #26303d; stroke: #5b6b7f; stroke-width: 1; }
+    .pt   { fill: #aeb9c6; font-size: 11px; }
+    .ttl  { fill: #8b97a6; font-size: 19px; font-weight: bold; }
+    .sub  { fill: #8b97a6; font-size: 13px; }
+  </style>
+
+  <text class="ttl" x="24" y="30">parliament</text>
+  <text class="sub" x="158" y="30">the event log is the state; everything else is a projection of it</text>
+
+  <!-- ============================ the centre ============================ -->
+  <rect class="core" x="300" y="236" width="330" height="152" rx="10"/>
+  <text class="hc"  x="320" y="266">THE EVENT LOG</text>
+  <text class="bc mono" x="320" y="292">append(id, expectedSequence, events[])</text>
+  <text class="bc" x="320" y="314">One append-only JSONL file per workflow.</text>
+  <text class="bc" x="320" y="332">Checksum per line; fsync before an append resolves.</text>
+  <text class="bc" x="320" y="350">The expected-sequence check is the only arbitration</text>
+  <text class="bc" x="320" y="368">in the system: no lock service, no lease table.</text>
+
+  <!-- ============================ left column =========================== -->
+  <rect class="card" x="24" y="64" width="212" height="104" rx="8"/>
+  <text class="h" x="42" y="92">HTTP API</text>
+  <text class="b" x="42" y="114">node:http, thirteen routes.</text>
+  <text class="b" x="42" y="132">Decides admissibility only:</text>
+  <text class="b" x="42" y="150">shape, budget, legal transition.</text>
+
+  <rect class="card" x="24" y="196" width="212" height="104" rx="8"/>
+  <text class="h" x="42" y="224">Dashboard</text>
+  <text class="b" x="42" y="246">DAG, timeline, replay slider.</text>
+  <text class="b" x="42" y="264">Fed by EventStore.subscribe,</text>
+  <text class="b" x="42" y="282">relayed to the browser as SSE.</text>
+
+  <rect class="card" x="24" y="328" width="212" height="86" rx="8"/>
+  <text class="h" x="42" y="356">replay CLI</text>
+  <text class="b" x="42" y="378">Reads a history like a stack</text>
+  <text class="b" x="42" y="396">trace. Any prefix, any run.</text>
+
+  <!-- ============================ above and below ======================= -->
+  <rect class="card" x="300" y="64" width="330" height="132" rx="8"/>
+  <text class="h" x="320" y="92">Scheduler loop</text>
+  <text class="b" x="320" y="114">1. expire lapsed leases, so a step whose worker</text>
+  <text class="b" x="320" y="132">&#160;&#160;&#160;vanished is eligible again this tick</text>
+  <text class="b" x="320" y="150">2. fold the history &#8594; 3. ask what may run &#8594;</text>
+  <text class="b" x="320" y="168">4. lease and dispatch, up to the caps</text>
+  <text class="b" x="320" y="186">Holds no state a replay could not rebuild.</text>
+
+  <rect class="card" x="300" y="428" width="330" height="116" rx="8"/>
+  <text class="h" x="320" y="456">project() &#8212; the fold</text>
+  <text class="b" x="320" y="478">Pure: no clock, no I/O, no randomness.</text>
+  <text class="b" x="320" y="496">Strict: an illegal transition throws rather than</text>
+  <text class="b" x="320" y="514">being absorbed. Idempotent: a redelivered</text>
+  <text class="b" x="320" y="532">event is folded once.</text>
+
+  <!-- ============================ right column ========================== -->
+  <rect class="card" x="700" y="64" width="256" height="182" rx="8"/>
+  <text class="h" x="718" y="92">Worker pool (TypeScript)</text>
+  <text class="b" x="718" y="114">Separate processes. Lease, then</text>
+  <text class="b" x="718" y="132">heartbeat on a timer the work</text>
+  <text class="b" x="718" y="150">never awaits, so a slow step</text>
+  <text class="b" x="718" y="168">cannot lose its own lease.</text>
+  <text class="b" x="718" y="190">Nodes: tool, llm, condition, join.</text>
+  <text class="b" x="718" y="212">Lease &#183; heartbeat &#183; report, through</text>
+  <text class="b" x="718" y="230">the scheduler&#8217;s worker port.</text>
+
+  <rect class="card" x="700" y="266" width="256" height="160" rx="8"/>
+  <text class="h" x="718" y="294">Tool executor</text>
+  <text class="b" x="718" y="316">The only path to a side effect.</text>
+  <text class="b" x="718" y="338">permissions &#8594; validate args &#8594;</text>
+  <text class="b" x="718" y="356">idempotency lookup &#8594; invoke</text>
+  <text class="b" x="718" y="374">with timeout &#8594; validate output</text>
+  <text class="b" x="718" y="392">&#8594; record the outcome.</text>
+  <text class="b" x="718" y="414">Each position is load-bearing.</text>
+
+  <rect class="card" x="700" y="446" width="256" height="150" rx="8"/>
+  <text class="h" x="718" y="474">Worker pool (Python)</text>
+  <text class="b" x="718" y="496">The same four operations over a</text>
+  <text class="b" x="718" y="514">socket: nine message types,</text>
+  <text class="b" x="718" y="532">correlated by id. Anything the</text>
+  <text class="b" x="718" y="550">log already knows stays in the</text>
+  <text class="b" x="718" y="568">log and does not travel.</text>
+  <text class="b mono" x="718" y="588">python-worker/PROTOCOL.md</text>
+
+  <!-- ============================ edges ================================= -->
+  <!-- API writes and reads -->
+  <path class="edge both" d="M 236 110 L 300 252"/>
+  <rect class="pill" x="236" y="168" width="64" height="20" rx="6"/>
+  <text class="pt" x="246" y="182">append</text>
+
+  <!-- Dashboard reads, pushed -->
+  <path class="edge read" d="M 300 300 L 236 252"/>
+  <rect class="pill" x="238" y="298" width="76" height="20" rx="6"/>
+  <text class="pt" x="246" y="312">subscribe</text>
+
+  <!-- replay CLI reads -->
+  <path class="edge read" d="M 300 350 L 236 368"/>
+
+  <!-- scheduler folds and appends -->
+  <path class="edge both" d="M 420 196 L 420 236"/>
+  <rect class="pill" x="432" y="206" width="146" height="20" rx="6"/>
+  <text class="pt" x="440" y="220">read &#183; fold &#183; append</text>
+
+  <!-- the log is folded by project() -->
+  <path class="edge read" d="M 420 388 L 420 428"/>
+  <rect class="pill" x="432" y="398" width="112" height="20" rx="6"/>
+  <text class="pt" x="440" y="412">events &#8594; state</text>
+
+  <!-- workers lease through the scheduler's port -->
+  <path class="edge both" d="M 700 120 L 630 120"/>
+  <rect class="pill" x="636" y="96" width="54" height="20" rx="6"/>
+  <text class="pt" x="645" y="110">lease</text>
+
+  <!-- workers reach side effects only through the executor -->
+  <path class="edge" d="M 828 246 L 828 266"/>
+  <rect class="pill" x="840" y="246" width="56" height="20" rx="6"/>
+  <text class="pt" x="848" y="260">invoke</text>
+
+  <!--
+    The Python pool talks to the control plane, not to the TypeScript workers, so its edge runs
+    to the same seam the TypeScript pool uses. The label for it lives inside the card rather than
+    on a pill, because the only clear routing for this edge is the narrow channel at x=664 and
+    there is no room beside it for text that would still be legible.
+  -->
+  <path class="edge both" d="M 700 480 L 664 480 L 664 150 L 630 150"/>
+
+  <!-- ============================ legend =============================== -->
+  <rect class="card" x="24" y="566" width="500" height="110" rx="8"/>
+  <text class="h" x="42" y="594">Reading the arrows</text>
+  <text class="b" x="42" y="616">Solid: appends an event, or claims a lease by appending one.</text>
+  <text class="b" x="42" y="634">Dashed: reads the log and folds it. Never mutates anything.</text>
+  <text class="b" x="42" y="656">Nothing in the diagram shares state with anything else except</text>
+  <text class="b" x="42" y="674">through the log. That is the whole architecture.</text>
+</svg>

@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 614" width="980" height="614"
+     font-family="Helvetica Neue, Helvetica, Arial, sans-serif" role="img"
+     aria-labelledby="title desc">
+  <title id="title">One workflow&#8217;s events on a timeline</title>
+  <desc id="desc">Eighteen events from one execution of the review workflow, laid out by the time
+    they were appended. One lane per step. The classify and screen lanes overlap, showing two
+    workers running parallel branches; the decide lane does not begin until the later of the two
+    finishes.</desc>
+
+  <!--
+    The numbers in this diagram are from one real run of `scripts/demo.sh`, read back out of
+    GET /workflows/:id/events — not invented to make the picture tidy. That is why classify takes
+    164 ms and screen takes 16 ms: one is a model call and the other is a hash. A diagram drawn
+    with even spacing would have hidden the one thing the shape is here to show.
+
+    Same light-and-dark discipline as architecture.svg: no background, and every piece of text
+    sits on a filled card or inside a filled marker.
+  -->
+
+  <defs>
+    <marker id="tick" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b97a6"/>
+    </marker>
+  </defs>
+
+  <style>
+    .card  { fill: #26303d; stroke: #5b6b7f; stroke-width: 1.5; }
+    .lane  { fill: #26303d; stroke: #44515f; stroke-width: 1; }
+    .h     { fill: #f1f5f9; font-size: 15px; font-weight: bold; }
+    .b     { fill: #aeb9c6; font-size: 12.5px; }
+    .lbl   { fill: #e2e8f0; font-size: 13px; font-weight: bold; }
+    .axis  { stroke: #8b97a6; stroke-width: 1.4; fill: none; }
+    .grid  { stroke: #5b6b7f; stroke-width: 1; stroke-dasharray: 3 5; }
+    .at    { fill: #8b97a6; font-size: 11.5px; }
+    .seq   { fill: #f1f5f9; font-size: 10px; font-weight: bold; text-anchor: middle; }
+    .ring  { fill: none; stroke: #cfe0f5; stroke-width: 1.4; }
+    .wa    { fill: #35618f; stroke: #7aa2d6; stroke-width: 1.4; }
+    .wb    { fill: #5a4a86; stroke: #a594d6; stroke-width: 1.4; }
+    .none  { fill: #26303d; stroke: #8b97a6; stroke-width: 1.4; }
+    .barwa { fill: #35618f; }
+    .barwb { fill: #5a4a86; }
+    .ttl   { fill: #8b97a6; font-size: 19px; font-weight: bold; }
+    .sub   { fill: #8b97a6; font-size: 13px; }
+    .mono  { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  </style>
+
+  <text class="ttl" x="24" y="30">one workflow, eighteen events</text>
+  <text class="sub" x="24" y="52">review: intake &#8594; {classify, screen} &#8594; decide &#8594; report. 460 ms end to end, two
+    worker processes, from a real run.</text>
+
+  <!-- ===================== lanes ===================== -->
+  <rect class="lane" x="24" y="88" width="926" height="36" rx="6"/>
+  <text class="lbl" x="38" y="111">(workflow)</text>
+  <rect class="lane" x="24" y="136" width="926" height="36" rx="6"/>
+  <text class="lbl" x="38" y="159">intake</text>
+  <rect class="lane" x="24" y="184" width="926" height="36" rx="6"/>
+  <text class="lbl" x="38" y="207">classify</text>
+  <rect class="lane" x="24" y="232" width="926" height="36" rx="6"/>
+  <text class="lbl" x="38" y="255">screen</text>
+  <rect class="lane" x="24" y="280" width="926" height="36" rx="6"/>
+  <text class="lbl" x="38" y="303">decide</text>
+  <rect class="lane" x="24" y="328" width="926" height="36" rx="6"/>
+  <text class="lbl" x="38" y="351">report</text>
+
+  <!-- ===================== time axis ===================== -->
+  <!-- x = 170 + milliseconds * 1.625 -->
+  <path class="axis" d="M 170 392 L 950 392" marker-end="url(#tick)"/>
+  <path class="grid" d="M 170 88 L 170 392"/>
+  <path class="grid" d="M 333 88 L 333 392"/>
+  <path class="grid" d="M 495 88 L 495 392"/>
+  <path class="grid" d="M 658 88 L 658 392"/>
+  <path class="grid" d="M 820 88 L 820 392"/>
+  <text class="at" x="170" y="410" text-anchor="middle">0</text>
+  <text class="at" x="333" y="410" text-anchor="middle">100</text>
+  <text class="at" x="495" y="410" text-anchor="middle">200</text>
+  <text class="at" x="658" y="410" text-anchor="middle">300</text>
+  <text class="at" x="820" y="410" text-anchor="middle">400</text>
+  <text class="at" x="640" y="428">milliseconds since workflow.created</text>
+
+  <!-- ===================== running intervals ===================== -->
+  <!-- started -> completed, filled in the colour of the worker that held the lease -->
+  <rect class="barwa" x="272" y="150" width="28"  height="8" rx="4"/>
+  <rect class="barwa" x="344" y="198" width="266" height="8" rx="4"/>
+  <rect class="barwb" x="393" y="246" width="26"  height="8" rx="4"/>
+  <rect class="barwa" x="651" y="294" width="23"  height="8" rx="4"/>
+  <rect class="barwa" x="718" y="342" width="22"  height="8" rx="4"/>
+
+  <!-- ===================== events ===================== -->
+  <!-- 1 workflow.created @0 -->
+  <rect class="none" x="161" y="97" width="18" height="18" rx="2" transform="rotate(45 170 106)"/>
+  <text class="seq" x="170" y="110">1</text>
+
+  <!-- 2 step.scheduled intake @0 -->
+  <rect class="none" x="161" y="145" width="18" height="18" rx="2"/>
+  <text class="seq" x="170" y="158">2</text>
+
+  <!-- 3 step.leased intake wa @51 -->
+  <circle class="none" cx="253" cy="154" r="9"/>
+  <text class="seq" x="253" y="158">3</text>
+  <!-- 4 step.started intake wa @63 -->
+  <circle class="wa" cx="272" cy="154" r="9"/>
+  <text class="seq" x="272" y="158">4</text>
+  <!-- 5 step.completed intake wa @80 -->
+  <circle class="wa" cx="300" cy="154" r="9"/>
+  <circle class="ring" cx="300" cy="154" r="12.5"/>
+  <text class="seq" x="300" y="158">5</text>
+
+  <!-- 6 step.leased classify wa @96 -->
+  <circle class="none" cx="326" cy="202" r="9"/>
+  <text class="seq" x="326" y="206">6</text>
+  <!-- 7 step.started classify wa @107 -->
+  <circle class="wa" cx="344" cy="202" r="9"/>
+  <text class="seq" x="344" y="206">7</text>
+  <!-- 11 step.completed classify wa @271 -->
+  <circle class="wa" cx="610" cy="202" r="9"/>
+  <circle class="ring" cx="610" cy="202" r="12.5"/>
+  <text class="seq" x="610" y="206">11</text>
+
+  <!-- 8 step.leased screen wb @126 -->
+  <circle class="none" cx="375" cy="250" r="9"/>
+  <text class="seq" x="375" y="254">8</text>
+  <!-- 9 step.started screen wb @137 -->
+  <circle class="wb" cx="393" cy="250" r="9"/>
+  <text class="seq" x="393" y="254">9</text>
+  <!-- 10 step.completed screen wb @153 -->
+  <circle class="wb" cx="419" cy="250" r="9"/>
+  <circle class="ring" cx="419" cy="250" r="12.5"/>
+  <text class="seq" x="419" y="254">10</text>
+
+  <!-- 12 step.leased decide wa @284 -->
+  <circle class="none" cx="632" cy="298" r="9"/>
+  <text class="seq" x="632" y="302">12</text>
+  <!-- 13 step.started decide wa @296 -->
+  <circle class="wa" cx="651" cy="298" r="9"/>
+  <text class="seq" x="651" y="302">13</text>
+  <!-- 14 step.completed decide wa @310 -->
+  <circle class="wa" cx="674" cy="298" r="9"/>
+  <circle class="ring" cx="674" cy="298" r="12.5"/>
+  <text class="seq" x="674" y="302">14</text>
+
+  <!-- 15 step.leased report wa @324 -->
+  <circle class="none" cx="697" cy="346" r="9"/>
+  <text class="seq" x="697" y="350">15</text>
+  <!-- 16 step.started report wa @337 -->
+  <circle class="wa" cx="718" cy="346" r="9"/>
+  <text class="seq" x="718" y="350">16</text>
+  <!-- 17 step.completed report wa @351 -->
+  <circle class="wa" cx="740" cy="346" r="9"/>
+  <circle class="ring" cx="740" cy="346" r="12.5"/>
+  <text class="seq" x="740" y="350">17</text>
+
+  <!-- 18 workflow.completed @460 -->
+  <rect class="none" x="909" y="97" width="18" height="18" rx="2" transform="rotate(45 918 106)"/>
+  <text class="seq" x="918" y="110">18</text>
+
+  <!-- ===================== annotations ===================== -->
+  <!-- the fan-in: decide waits for the later of the two branches -->
+  <path class="grid" d="M 610 215 L 610 286"/>
+  <rect class="card" x="486" y="440" width="464" height="86" rx="8"/>
+  <text class="b" x="502" y="464">decide was leased 13 ms after the later branch finished (11),</text>
+  <text class="b" x="502" y="482">not after the earlier one (10). A fan-in is ready when every</text>
+  <text class="b" x="502" y="500">dependency has succeeded, and the fold derives that after</text>
+  <text class="b" x="502" y="518">every event, so no producer has to remember to mark it.</text>
+
+  <rect class="card" x="24" y="440" width="440" height="86" rx="8"/>
+  <text class="b" x="40" y="464">Only intake has a step.scheduled (2). The other four steps</text>
+  <text class="b" x="40" y="482">became ready through their dependencies &#8212; a property of</text>
+  <text class="b" x="40" y="500">the fold, not an event. Nothing in the log announces it,</text>
+  <text class="b" x="40" y="518">and so nothing can forget to.</text>
+
+  <!-- ===================== legend ===================== -->
+  <rect class="card" x="24" y="538" width="926" height="64" rx="8"/>
+  <text class="h" x="40" y="560">Markers</text>
+
+  <rect class="none" x="131" y="552" width="16" height="16" rx="2"/>
+  <text class="b" x="156" y="565">step.scheduled</text>
+  <circle class="none" cx="268" cy="560" r="8"/>
+  <text class="b" x="282" y="565">step.leased &#8212; a claim, not a start</text>
+  <circle class="wa" cx="520" cy="560" r="8"/>
+  <text class="b" x="534" y="565">step.started</text>
+  <circle class="wa" cx="630" cy="560" r="8"/>
+  <circle class="ring" cx="630" cy="560" r="11.5"/>
+  <text class="b" x="647" y="565">step.completed</text>
+  <rect class="none" x="768" y="552" width="16" height="16" rx="2" transform="rotate(45 776 560)"/>
+  <text class="b" x="793" y="565">workflow-level event</text>
+
+  <rect class="barwa" x="131" y="584" width="26" height="8" rx="4"/>
+  <text class="b" x="166" y="592">worker wa holding a lease</text>
+  <rect class="barwb" x="340" y="584" width="26" height="8" rx="4"/>
+  <text class="b" x="375" y="592">worker wb holding a lease</text>
+  <text class="b mono" x="560" y="592">GET /workflows/:id/events returns these 18 records</text>
+</svg>
